@@ -1,0 +1,58 @@
+# Arquivo .gitignore para projeto Node.js + TypeScript
+
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Ambiente
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
+
+# Configurações
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+
+# Testes
+coverage/
+.nyc_output/
+
+# Banco de dados
+*.db
+*.sqlite
+/database/dump/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.js.map
+*.d.ts
+
+# Editor/IDE específico
+.idea
+.vscode
+*.swp
+*.swo
+
+# Outros
+.temp/
+.cache/
+*.tmp
+*.bak
