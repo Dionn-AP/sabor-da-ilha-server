@@ -5,26 +5,49 @@ import { Order } from "../models/order.model";
 import { Product } from "../models/product.model";
 import { Inventory } from "../models/inventory.model";
 
-const sequelize = new Sequelize({
+const sequelize = new Sequelize(process.env.DATABASE_URL!, {
   dialect: "postgres",
-  host: config.db.host,
-  port: config.db.port,
-  database: config.db.name,
-  username: config.db.user,
-  password: config.db.password,
-  models: [User, Order, Product, Inventory],
-  modelMatch: (filename, member) => {
-    return (
-      filename.substring(0, filename.indexOf(".model")) === member.toLowerCase()
-    );
-  },
-  logging: false,
-  //logging: config.app.env === "development" ? console.log : false,
   dialectOptions: {
-    useUTC: false,
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
   },
-  timezone: config.app.timezone,
+  retry: {
+    max: 5,
+    timeout: 30000,
+  },
 });
+
+// const sequelize = new Sequelize({
+//   dialect: "postgres",
+//   host: config.db.host,
+//   port: config.db.port,
+//   database: config.db.name,
+//   username: config.db.user,
+//   password: config.db.password,
+//   dialectOptions: {
+//     ssl: config.db.ssl
+//       ? {
+//           require: true,
+//           rejectUnauthorized: false, // Necessário para o Neon
+//         }
+//       : false,
+//     useUTC: false,
+//   },
+//   logging: false,
+//   pool: {
+//     max: 5,
+//     min: 0,
+//     acquire: 30000,
+//     idle: 10000,
+//   },
+//   retry: {
+//     max: 3, // Tentar reconectar 3 vezes
+//     timeout: 60000, // 60 segundos entre tentativas
+//   },
+//   timezone: config.app.timezone,
+// });
 
 export const connectDB = async () => {
   try {

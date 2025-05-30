@@ -6,29 +6,49 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sequelize = exports.connectDB = void 0;
 const sequelize_typescript_1 = require("sequelize-typescript");
 const env_1 = __importDefault(require("./env"));
-const user_model_1 = require("../models/user.model");
-const order_model_1 = require("../models/order.model");
-const product_model_1 = require("../models/product.model");
-const inventory_model_1 = require("../models/inventory.model");
-const sequelize = new sequelize_typescript_1.Sequelize({
+const sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
-    host: env_1.default.db.host,
-    port: env_1.default.db.port,
-    database: env_1.default.db.name,
-    username: env_1.default.db.user,
-    password: env_1.default.db.password,
-    models: [user_model_1.User, order_model_1.Order, product_model_1.Product, inventory_model_1.Inventory],
-    modelMatch: (filename, member) => {
-        return (filename.substring(0, filename.indexOf(".model")) === member.toLowerCase());
-    },
-    logging: false,
-    //logging: config.app.env === "development" ? console.log : false,
     dialectOptions: {
-        useUTC: false,
+        ssl: {
+            require: true,
+            rejectUnauthorized: false,
+        },
     },
-    timezone: env_1.default.app.timezone,
+    retry: {
+        max: 5,
+        timeout: 30000,
+    },
 });
 exports.sequelize = sequelize;
+// const sequelize = new Sequelize({
+//   dialect: "postgres",
+//   host: config.db.host,
+//   port: config.db.port,
+//   database: config.db.name,
+//   username: config.db.user,
+//   password: config.db.password,
+//   dialectOptions: {
+//     ssl: config.db.ssl
+//       ? {
+//           require: true,
+//           rejectUnauthorized: false, // Necessário para o Neon
+//         }
+//       : false,
+//     useUTC: false,
+//   },
+//   logging: false,
+//   pool: {
+//     max: 5,
+//     min: 0,
+//     acquire: 30000,
+//     idle: 10000,
+//   },
+//   retry: {
+//     max: 3, // Tentar reconectar 3 vezes
+//     timeout: 60000, // 60 segundos entre tentativas
+//   },
+//   timezone: config.app.timezone,
+// });
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
