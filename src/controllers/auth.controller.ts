@@ -87,11 +87,6 @@ class AuthController {
 
   static async listUsers(req: Request, res: Response) {
     try {
-      // Verificar se o usuário é master (opcional, descomente se quiser restringir)
-      // if (req.user?.role !== UserRole.MASTER) {
-      //   return res.status(403).json({ message: "Permissão negada" });
-      // }
-
       const users = await User.findAll({
         attributes: ["id", "name", "email", "role", "isActive"], // Campos que serão retornados
         order: [["name", "ASC"]], // Ordenar por nome
