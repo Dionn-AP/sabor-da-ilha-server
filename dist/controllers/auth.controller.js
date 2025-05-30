@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jwt = __importStar(require("jsonwebtoken"));
 const env_1 = __importDefault(require("../config/env"));
 const user_model_1 = require("../models/user.model");
-const user_model_2 = require("../models/user.model");
 class AuthController {
     static async login(req, res) {
         console.log("Body recebido:", req.body);
@@ -81,10 +80,6 @@ class AuthController {
     static async register(req, res) {
         try {
             const { name, email, password, role } = req.body;
-            // Verificação de permissão
-            if (req.user?.role !== user_model_2.UserRole.MASTER) {
-                return res.status(403).json({ message: "Permissão negada" });
-            }
             const existingUser = await user_model_1.User.findOne({ where: { email } });
             if (existingUser) {
                 return res.status(400).json({ message: "Email já cadastrado" });

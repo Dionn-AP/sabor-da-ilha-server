@@ -55,11 +55,6 @@ class AuthController {
     try {
       const { name, email, password, role } = req.body;
 
-      // Verificação de permissão
-      if (req.user?.role !== UserRole.MASTER) {
-        return res.status(403).json({ message: "Permissão negada" });
-      }
-
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         return res.status(400).json({ message: "Email já cadastrado" });
