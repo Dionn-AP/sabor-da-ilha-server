@@ -6,8 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sequelize = exports.connectDB = void 0;
 const sequelize_typescript_1 = require("sequelize-typescript");
 const env_1 = __importDefault(require("./env"));
+const user_model_1 = require("../models/user.model");
+const order_model_1 = require("../models/order.model");
+const product_model_1 = require("../models/product.model");
+const inventory_model_1 = require("../models/inventory.model");
 const sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
+    models: [user_model_1.User, order_model_1.Order, product_model_1.Product, inventory_model_1.Inventory],
     dialectOptions: {
         ssl: {
             require: true,

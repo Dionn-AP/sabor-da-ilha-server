@@ -7,6 +7,7 @@ import { Inventory } from "../models/inventory.model";
 
 const sequelize = new Sequelize(process.env.DATABASE_URL!, {
   dialect: "postgres",
+  models: [User, Order, Product, Inventory],
   dialectOptions: {
     ssl: {
       require: true,
