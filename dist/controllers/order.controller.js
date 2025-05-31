@@ -102,6 +102,13 @@ class OrderController {
             if (status === order_model_1.OrderStatus.PREPARING || status === order_model_1.OrderStatus.READY) {
                 order.kitchenUserId = kitchenUserId;
             }
+            // Em updateOrderStatus:
+            if (status === order_model_1.OrderStatus.CANCELLED && !req.body.cancelReason) {
+                return res
+                    .status(400)
+                    .json({ message: "Motivo do cancelamento é obrigatório" });
+            }
+            order.cancelReason = req.body.cancelReason; // Adicione este campo no modelo
             order.status = status;
             await order.save();
             res.json(order);
@@ -161,6 +168,19 @@ class OrderController {
             console.error("Error generating order report:", error);
             res.status(500).json({ message: "Erro ao gerar relatório" });
         }
+    }
+    static async getKitchenOrders(req, res) {
+        const orders = await order_model_1.Order.findAll({
+            where: {
+                status: [order_model_1.OrderStatus.PENDING, order_model_1.OrderStatus.PREPARING],
+            },
+            attributes: ["id", "items", "status", "tableNumber", "observations"],
+            order: [
+                ["status", "ASC"],
+                ["createdAt", "ASC"],
+            ], // Prioritiza pedidos mais antigos
+        });
+        res.json(orders);
     }
 }
 exports.default = OrderController;

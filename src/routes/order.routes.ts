@@ -7,17 +7,12 @@ import { UserRole } from "../models/user.model";
 const router = Router();
 
 // Rotas para atendentes
-router.post(
-  "/",
-  authenticate,
-  authorize([UserRole.ATTENDANT, UserRole.MANAGER, UserRole.MASTER]),
-  OrderController.createOrder
-);
+router.post("/orders", authenticate, OrderController.createOrder);
 
 router.get(
-  "/",
+  "/orders",
   authenticate,
-  authorize([UserRole.ATTENDANT, UserRole.MANAGER, UserRole.MASTER]),
+  authorize([UserRole.ATTENDANT, UserRole.MANAGER]),
   OrderController.listOrders
 );
 

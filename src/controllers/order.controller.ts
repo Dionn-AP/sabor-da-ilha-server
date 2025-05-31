@@ -18,6 +18,17 @@ declare namespace Order {
   }
 }
 
+interface OrderItem {
+  productId: number;
+  quantity: number;
+  observations?: string;
+}
+
+interface OrderItemWithPrice extends OrderItem {
+  unitPrice: number;
+  itemTotal: number;
+}
+
 export default class OrderController {
   static async createOrder(req: Request, res: Response) {
     const transaction = await sequelize.transaction();
@@ -44,7 +55,7 @@ export default class OrderController {
       }
 
       // Preparar itens com preços atuais
-      const orderItems = items.map((item: any) => {
+      const orderItems: OrderItemWithPrice[] = items.map((item: OrderItem) => {
         const product = products.find((p) => p.id === item.productId);
         if (!product) throw new Error("Produto não encontrado");
 
@@ -132,6 +143,14 @@ export default class OrderController {
         order.kitchenUserId = kitchenUserId;
       }
 
+      // Em updateOrderStatus:
+      if (status === OrderStatus.CANCELLED && !req.body.cancelReason) {
+        return res
+          .status(400)
+          .json({ message: "Motivo do cancelamento é obrigatório" });
+      }
+      order.cancelReason = req.body.cancelReason; // Adicione este campo no modelo
+
       order.status = status;
       await order.save();
 
@@ -200,5 +219,19 @@ export default class OrderController {
       console.error("Error generating order report:", error);
       res.status(500).json({ message: "Erro ao gerar relatório" });
     }
+  }
+
+  static async getKitchenOrders(req: Request, res: Response) {
+    const orders = await Order.findAll({
+      where: {
+        status: [OrderStatus.PENDING, OrderStatus.PREPARING],
+      },
+      attributes: ["id", "items", "status", "tableNumber", "observations"],
+      order: [
+        ["status", "ASC"],
+        ["createdAt", "ASC"],
+      ], // Prioritiza pedidos mais antigos
+    });
+    res.json(orders);
   }
 }

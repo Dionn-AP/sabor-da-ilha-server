@@ -27,6 +27,7 @@ export enum OrderStatus {
   underscored: true,
 })
 export class Order extends Model {
+  [x: string]: any;
   @PrimaryKey
   @AutoIncrement
   @Column

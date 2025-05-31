@@ -4,16 +4,16 @@ import config from "../config/env";
 import { User } from "../models/user.model";
 import { UserRole } from "../models/user.model";
 import { loginSchema } from "../validations/auth.validation";
+import { sequelize } from "../config/database";
 
 class AuthController {
   static async login(req: Request, res: Response) {
-    console.log("Body recebido:", req.body);
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ where: { email } });
-
-      console.log(user);
+      const user = await User.findOne({
+        where: { email },
+      });
 
       if (!user || !(await user.comparePassword(password))) {
         return res.status(401).json({ message: "Credenciais inválidas" });

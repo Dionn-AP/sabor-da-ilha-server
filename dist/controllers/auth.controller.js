@@ -41,11 +41,11 @@ const env_1 = __importDefault(require("../config/env"));
 const user_model_1 = require("../models/user.model");
 class AuthController {
     static async login(req, res) {
-        console.log("Body recebido:", req.body);
         try {
             const { email, password } = req.body;
-            const user = await user_model_1.User.findOne({ where: { email } });
-            console.log(user);
+            const user = await user_model_1.User.findOne({
+                where: { email },
+            });
             if (!user || !(await user.comparePassword(password))) {
                 return res.status(401).json({ message: "Credenciais inválidas" });
             }

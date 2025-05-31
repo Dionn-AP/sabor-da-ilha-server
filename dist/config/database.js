@@ -12,6 +12,7 @@ const product_model_1 = require("../models/product.model");
 const inventory_model_1 = require("../models/inventory.model");
 const sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
+    protocol: "postgres",
     models: [user_model_1.User, order_model_1.Order, product_model_1.Product, inventory_model_1.Inventory],
     dialectOptions: {
         ssl: {
@@ -19,6 +20,7 @@ const sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL,
             rejectUnauthorized: false,
         },
     },
+    logging: false,
     retry: {
         max: 5,
         timeout: 30000,

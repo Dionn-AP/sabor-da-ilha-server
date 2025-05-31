@@ -9,7 +9,17 @@ import { productSchema } from "../validations/product.validation";
 const router = Router();
 
 // Rotas públicas
-router.get("/", ProductController.listActiveProducts);
+router.get(
+  "/products",
+  authenticate,
+  authorize([
+    UserRole.MANAGER,
+    UserRole.STOCK,
+    UserRole.KITCHEN,
+    UserRole.MASTER,
+  ]),
+  ProductController.listActiveProducts
+);
 
 // Rotas autenticadas
 router.post(

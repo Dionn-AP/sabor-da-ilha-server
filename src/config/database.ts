@@ -7,6 +7,7 @@ import { Inventory } from "../models/inventory.model";
 
 const sequelize = new Sequelize(process.env.DATABASE_URL!, {
   dialect: "postgres",
+  protocol: "postgres",
   models: [User, Order, Product, Inventory],
   dialectOptions: {
     ssl: {
@@ -14,6 +15,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL!, {
       rejectUnauthorized: false,
     },
   },
+  logging: false,
   retry: {
     max: 5,
     timeout: 30000,
