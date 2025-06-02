@@ -10,6 +10,5 @@ const router = Router();
 router.post("/login", validate(loginSchema), AuthController.login);
 router.post("/register", validate(registerSchema), AuthController.register);
 router.get("/users", authenticate, AuthController.listUsers);
-router.post("/orders", authenticate, OrderController.createOrder);
 
 export default router;

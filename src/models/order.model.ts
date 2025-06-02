@@ -11,7 +11,6 @@ import {
   Default,
 } from "sequelize-typescript";
 import { User } from "./user.model";
-import { Product } from "./product.model";
 
 export enum OrderStatus {
   PENDING = "pendente",
@@ -76,4 +75,13 @@ export class Order extends Model {
 
   @Column
   closedAt?: Date;
+
+  @Column
+  startedAt?: Date; // Quando começou a preparação
+
+  @Column
+  readyAt?: Date; // Quando ficou pronto
+
+  @Column
+  deliveredAt?: Date; // Quando foi entregue
 }
