@@ -18,13 +18,13 @@ declare namespace Order {
   }
 }
 
-interface OrderItem {
+interface OrderRequestItem {
   productId: number;
   quantity: number;
   observations?: string;
 }
 
-interface OrderItemWithPrice extends OrderItem {
+interface OrderItemWithPrice extends OrderRequestItem {
   unitPrice: number;
   itemTotal: number;
 }
@@ -55,21 +55,23 @@ export default class OrderController {
       }
 
       // Preparar itens com preços atuais
-      const orderItems: OrderItemWithPrice[] = items.map((item: OrderItem) => {
-        const product = products.find((p) => p.id === item.productId);
-        if (!product) throw new Error("Produto não encontrado");
+      const orderItems: OrderItemWithPrice[] = items.map(
+        (item: OrderRequestItem) => {
+          const product = products.find((p) => p.id === item.productId);
+          if (!product) throw new Error("Produto não encontrado");
 
-        const itemTotal = product.price * item.quantity;
-        total += itemTotal;
+          const itemTotal = product.price * item.quantity;
+          total += itemTotal;
 
-        return {
-          productId: product.id,
-          quantity: item.quantity,
-          unitPrice: product.price,
-          observations: item.observations,
-          itemTotal,
-        };
-      });
+          return {
+            productId: product.id,
+            quantity: item.quantity,
+            unitPrice: product.price,
+            observations: item.observations,
+            itemTotal,
+          };
+        }
+      );
 
       // Criar pedido
       const order = await Order.create(
@@ -115,7 +117,34 @@ export default class OrderController {
         order: [["createdAt", "DESC"]],
       });
 
-      res.json(orders);
+      const enhancedOrders = await Promise.all(
+        orders.map(async (order) => {
+          const itemsWithProduct = await Promise.all(
+            order.items.map(async (item: any) => {
+              const product = await Product.findByPk(item.productId);
+              return {
+                quantity: item.quantity,
+                observations: item.observations,
+                itemTotal: item.itemTotal,
+                product: product
+                  ? {
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                    }
+                  : null,
+              };
+            })
+          );
+
+          return {
+            ...order.toJSON(),
+            items: itemsWithProduct,
+          };
+        })
+      );
+
+      return res.status(200).json(enhancedOrders);
     } catch (error) {
       console.error("Error listing orders:", error);
       res.status(500).json({ message: "Erro ao listar pedidos" });
