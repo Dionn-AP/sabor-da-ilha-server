@@ -78,7 +78,28 @@ class OrderController {
                 ],
                 order: [["createdAt", "DESC"]],
             });
-            res.json(orders);
+            const enhancedOrders = await Promise.all(orders.map(async (order) => {
+                const itemsWithProduct = await Promise.all(order.items.map(async (item) => {
+                    const product = await product_model_1.Product.findByPk(item.productId);
+                    return {
+                        quantity: item.quantity,
+                        observations: item.observations,
+                        itemTotal: item.itemTotal,
+                        product: product
+                            ? {
+                                id: product.id,
+                                name: product.name,
+                                price: product.price,
+                            }
+                            : null,
+                    };
+                }));
+                return {
+                    ...order.toJSON(),
+                    items: itemsWithProduct,
+                };
+            }));
+            return res.status(200).json(enhancedOrders);
         }
         catch (error) {
             console.error("Error listing orders:", error);
@@ -86,36 +107,53 @@ class OrderController {
         }
     }
     static async updateOrderStatus(req, res) {
+        const transaction = await database_1.sequelize.transaction(); // Adicionar transação
         try {
             const { id } = req.params;
-            const { status } = req.body;
-            const kitchenUserId = req.user?.id;
-            const validStatusValues = Object.values(order_model_1.OrderStatus);
-            if (!validStatusValues.includes(status)) {
+            const { status, cancelReason } = req.body; // Desestruturar cancelReason
+            const userId = req.user?.id;
+            // Validação centralizada
+            if (!Object.values(order_model_1.OrderStatus).includes(status)) {
+                await transaction.rollback();
                 return res.status(400).json({ message: "Status inválido" });
             }
-            const order = await order_model_1.Order.findByPk(id);
+            const order = await order_model_1.Order.findByPk(id, { transaction });
             if (!order) {
+                await transaction.rollback();
                 return res.status(404).json({ message: "Pedido não encontrado" });
             }
-            // Atualizar status e registrar quem alterou (para pedidos preparando/pronto)
-            if (status === order_model_1.OrderStatus.PREPARING || status === order_model_1.OrderStatus.READY) {
-                order.kitchenUserId = kitchenUserId;
+            // Validação de fluxo
+            if (status === order_model_1.OrderStatus.CANCELLED) {
+                if (!cancelReason) {
+                    await transaction.rollback();
+                    return res
+                        .status(400)
+                        .json({ message: "Motivo do cancelamento é obrigatório" });
+                }
+                order.cancelReason = cancelReason;
             }
-            // Em updateOrderStatus:
-            if (status === order_model_1.OrderStatus.CANCELLED && !req.body.cancelReason) {
+            // Atualizações condicionais
+            if (status === order_model_1.OrderStatus.PREPARING) {
+                order.kitchenUserId = userId;
+                order.startedAt = new Date(); // Novo campo para tempo de preparo
+            }
+            else if (status === order_model_1.OrderStatus.READY) {
+                order.readyAt = new Date();
+            }
+            if (order.status === "pronto" && status === "preparando") {
                 return res
                     .status(400)
-                    .json({ message: "Motivo do cancelamento é obrigatório" });
+                    .json({ message: "Status não pode ser revertido" });
             }
-            order.cancelReason = req.body.cancelReason; // Adicione este campo no modelo
             order.status = status;
-            await order.save();
+            await order.save({ transaction });
+            await transaction.commit();
             res.json(order);
         }
         catch (error) {
+            await transaction.rollback();
             console.error("Error updating order status:", error);
-            res.status(500).json({ message: "Erro ao atualizar status do pedido" });
+            res.status(500).json({ message: "Erro ao atualizar status" });
         }
     }
     static async getOrderReport(req, res) {
@@ -132,53 +170,80 @@ class OrderController {
                     ],
                 };
             }
-            // 1. Primeira query para totais agregados
-            const totals = await order_model_1.Order.findOne({
-                where,
-                attributes: [
-                    [database_1.sequelize.fn("COUNT", database_1.sequelize.col("id")), "totalOrders"],
-                    [database_1.sequelize.fn("SUM", database_1.sequelize.col("total")), "totalRevenue"],
-                ],
-                raw: true,
-            });
-            // 2. Segunda query para agrupamento por status
-            const byStatus = await order_model_1.Order.findAll({
+            // Única query com todos os dados necessários
+            const report = await order_model_1.Order.findAll({
                 where,
                 attributes: [
                     "status",
-                    [database_1.sequelize.fn("COUNT", database_1.sequelize.col("id")), "count"],
-                    [database_1.sequelize.fn("SUM", database_1.sequelize.col("total")), "amount"],
-                ],
-                group: ["status"],
-                raw: true,
-            });
-            // Formatar resposta
-            const result = (await order_model_1.Order.findAll({
-                where,
-                attributes: [
                     [database_1.sequelize.fn("COUNT", database_1.sequelize.col("id")), "count"],
                     [database_1.sequelize.fn("SUM", database_1.sequelize.col("total")), "totalAmount"],
                 ],
                 group: ["status"],
                 raw: true,
-            }));
-            res.json(result);
+            });
+            // Cálculo dos totais
+            const totals = {
+                totalOrders: report.reduce((sum, item) => sum + parseInt(item.count), 0),
+                totalRevenue: report.reduce((sum, item) => sum + parseFloat(item.totalAmount || "0"), 0),
+            };
+            res.json({ byStatus: report, totals });
         }
         catch (error) {
-            console.error("Error generating order report:", error);
+            console.error("Error generating report:", error);
             res.status(500).json({ message: "Erro ao gerar relatório" });
         }
     }
     static async getKitchenOrders(req, res) {
+        try {
+            const orders = await order_model_1.Order.findAll({
+                where: {
+                    status: [order_model_1.OrderStatus.PENDING, order_model_1.OrderStatus.PREPARING],
+                },
+                attributes: [
+                    "id",
+                    "items",
+                    "status",
+                    "tableNumber",
+                    "observations",
+                    "createdAt",
+                    [
+                        database_1.sequelize.literal('(SELECT name FROM users WHERE id = orders."attendantId")'),
+                        "attendantName",
+                    ],
+                ],
+                order: [
+                    ["status", "ASC"],
+                    ["createdAt", "ASC"],
+                ],
+            });
+            res.json(orders);
+        }
+        catch (error) {
+            console.error("Error fetching kitchen orders:", error);
+            res.status(500).json({ message: "Erro ao buscar pedidos" });
+        }
+    }
+    static async getByStatus(req, res) {
+        const { status } = req.query;
         const orders = await order_model_1.Order.findAll({
-            where: {
-                status: [order_model_1.OrderStatus.PENDING, order_model_1.OrderStatus.PREPARING],
-            },
-            attributes: ["id", "items", "status", "tableNumber", "observations"],
-            order: [
-                ["status", "ASC"],
-                ["createdAt", "ASC"],
-            ], // Prioritiza pedidos mais antigos
+            where: status ? { status } : {},
+            include: [
+                { model: user_model_1.User, as: "attendant", attributes: ["name"] },
+                { model: user_model_1.User, as: "kitchenUser", attributes: ["name"] },
+            ],
+            order: [["createdAt", "ASC"]],
+        });
+        res.json(orders);
+    }
+    // GET /orders/history?status=entregue
+    static async getOrderHistory(req, res) {
+        const orders = await order_model_1.Order.findAll({
+            where: { status: req.query.status },
+            include: [
+                { model: user_model_1.User, as: "attendant", attributes: ["name"] },
+                { model: user_model_1.User, as: "kitchenUser", attributes: ["name"] },
+            ],
+            order: [["deliveredAt", "DESC"]],
         });
         res.json(orders);
     }

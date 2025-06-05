@@ -79,6 +79,18 @@ __decorate([
     sequelize_typescript_1.Column,
     __metadata("design:type", Date)
 ], Order.prototype, "closedAt", void 0);
+__decorate([
+    sequelize_typescript_1.Column,
+    __metadata("design:type", Date)
+], Order.prototype, "startedAt", void 0);
+__decorate([
+    sequelize_typescript_1.Column,
+    __metadata("design:type", Date)
+], Order.prototype, "readyAt", void 0);
+__decorate([
+    sequelize_typescript_1.Column,
+    __metadata("design:type", Date)
+], Order.prototype, "deliveredAt", void 0);
 exports.Order = Order = __decorate([
     (0, sequelize_typescript_1.Table)({
         tableName: "orders",
