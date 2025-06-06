@@ -27,35 +27,6 @@ const sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL,
     },
 });
 exports.sequelize = sequelize;
-// const sequelize = new Sequelize({
-//   dialect: "postgres",
-//   host: config.db.host,
-//   port: config.db.port,
-//   database: config.db.name,
-//   username: config.db.user,
-//   password: config.db.password,
-//   dialectOptions: {
-//     ssl: config.db.ssl
-//       ? {
-//           require: true,
-//           rejectUnauthorized: false, // Necessário para o Neon
-//         }
-//       : false,
-//     useUTC: false,
-//   },
-//   logging: false,
-//   pool: {
-//     max: 5,
-//     min: 0,
-//     acquire: 30000,
-//     idle: 10000,
-//   },
-//   retry: {
-//     max: 3, // Tentar reconectar 3 vezes
-//     timeout: 60000, // 60 segundos entre tentativas
-//   },
-//   timezone: config.app.timezone,
-// });
 const connectDB = async () => {
     try {
         await sequelize.authenticate();

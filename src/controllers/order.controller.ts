@@ -257,7 +257,11 @@ export default class OrderController {
     try {
       const orders = await Order.findAll({
         where: {
-          status: [OrderStatus.PENDING, OrderStatus.PREPARING],
+          status: [
+            OrderStatus.PENDING,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+          ],
         },
         attributes: [
           "id",

@@ -197,7 +197,11 @@ class OrderController {
         try {
             const orders = await order_model_1.Order.findAll({
                 where: {
-                    status: [order_model_1.OrderStatus.PENDING, order_model_1.OrderStatus.PREPARING],
+                    status: [
+                        order_model_1.OrderStatus.PENDING,
+                        order_model_1.OrderStatus.PREPARING,
+                        order_model_1.OrderStatus.READY,
+                    ],
                 },
                 attributes: [
                     "id",
