@@ -29,6 +29,13 @@ router.patch(
   OrderController.updateOrderStatus
 );
 
+router.get(
+  "/list/kitchen/orders",
+  authenticate,
+  authorize([UserRole.KITCHEN, UserRole.MANAGER, UserRole.MASTER]),
+  OrderController.getKitchenOrders
+);
+
 // Rotas para gerentes
 router.get(
   "/report",

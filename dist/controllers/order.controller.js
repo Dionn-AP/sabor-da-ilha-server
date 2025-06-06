@@ -203,20 +203,40 @@ class OrderController {
                     "id",
                     "items",
                     "status",
-                    "tableNumber",
+                    ["table_number", "tableNumber"],
                     "observations",
-                    "createdAt",
+                    ["created_at", "createdAt"],
                     [
-                        database_1.sequelize.literal('(SELECT name FROM users WHERE id = orders."attendantId")'),
+                        database_1.sequelize.literal('(SELECT name FROM users WHERE id = "Order"."attendant_id")'),
                         "attendantName",
                     ],
                 ],
                 order: [
                     ["status", "ASC"],
-                    ["createdAt", "ASC"],
+                    ["created_at", "ASC"],
                 ],
+                raw: true,
             });
-            res.json(orders);
+            // Coletar todos os productIds únicos usados nos pedidos
+            const allProductIds = [
+                ...new Set(orders.flatMap((order) => order.items.map((item) => item.productId))),
+            ];
+            // Buscar os produtos no banco
+            const products = await product_model_1.Product.findAll({
+                where: { id: allProductIds },
+                attributes: ["id", "name"],
+                raw: true,
+            });
+            const productMap = Object.fromEntries(products.map((product) => [product.id, product.name]));
+            // Inserir o nome do produto em cada item
+            const enrichedOrders = orders.map((order) => ({
+                ...order,
+                items: order.items.map((item) => ({
+                    ...item,
+                    name: productMap[item.productId] || "Produto não encontrado",
+                })),
+            }));
+            res.json(enrichedOrders);
         }
         catch (error) {
             console.error("Error fetching kitchen orders:", error);
