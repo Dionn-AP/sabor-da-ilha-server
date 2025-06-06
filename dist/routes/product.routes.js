@@ -13,6 +13,7 @@ const product_validation_1 = require("../validations/product.validation");
 const router = (0, express_1.Router)();
 // Rotas públicas
 router.get("/products", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([
+    user_model_1.UserRole.ATTENDANT,
     user_model_1.UserRole.MANAGER,
     user_model_1.UserRole.STOCK,
     user_model_1.UserRole.KITCHEN,
