@@ -65,7 +65,7 @@ class AuthController {
         email,
         password,
         role,
-        isActive: true,
+        isActive: false,
       });
 
       res.status(201).json({
