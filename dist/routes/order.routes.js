@@ -12,6 +12,12 @@ const router = (0, express_1.Router)();
 // Rotas para atendentes
 router.post("/order", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.ATTENDANT, user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER]), order_controller_1.default.createOrder);
 router.get("/orders", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.KITCHEN, user_model_1.UserRole.ATTENDANT, user_model_1.UserRole.MANAGER]), order_controller_1.default.listOrders);
+router.get("/history", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([
+    user_model_1.UserRole.ATTENDANT,
+    user_model_1.UserRole.MANAGER,
+    user_model_1.UserRole.MASTER,
+    user_model_1.UserRole.KITCHEN,
+]), order_controller_1.default.getOrderHistory);
 // Rotas para cozinha
 router.patch("/:id/status", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.KITCHEN, user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER]), order_controller_1.default.updateOrderStatus);
 router.get("/list/kitchen/orders", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.KITCHEN, user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER]), order_controller_1.default.getKitchenOrders);

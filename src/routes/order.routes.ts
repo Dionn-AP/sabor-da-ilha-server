@@ -21,6 +21,18 @@ router.get(
   OrderController.listOrders
 );
 
+router.get(
+  "/history",
+  authenticate,
+  authorize([
+    UserRole.ATTENDANT,
+    UserRole.MANAGER,
+    UserRole.MASTER,
+    UserRole.KITCHEN,
+  ]),
+  OrderController.getOrderHistory
+);
+
 // Rotas para cozinha
 router.patch(
   "/:id/status",
