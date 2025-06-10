@@ -116,5 +116,35 @@ class AuthController {
             res.status(500).json({ message: "Erro ao listar usuários" });
         }
     }
+    static async listInactiveUsers(req, res) {
+        try {
+            const inactiveUsers = await user_model_1.User.findAll({
+                where: { isActive: false },
+                attributes: ["id", "name", "email", "role", "isActive"],
+                order: [["name", "ASC"]],
+            });
+            res.json(inactiveUsers);
+        }
+        catch (error) {
+            console.error("Erro ao listar usuários inativos:", error);
+            res.status(500).json({ message: "Erro ao listar usuários inativos" });
+        }
+    }
+    static async activateUser(req, res) {
+        const { id } = req.params;
+        try {
+            const user = await user_model_1.User.findByPk(id);
+            if (!user) {
+                return res.status(404).json({ message: "Usuário não encontrado" });
+            }
+            user.isActive = true;
+            await user.save();
+            res.json({ message: "Usuário ativado com sucesso", user });
+        }
+        catch (error) {
+            console.error("Erro ao ativar usuário:", error);
+            res.status(500).json({ message: "Erro ao ativar usuário" });
+        }
+    }
 }
 exports.default = AuthController;
