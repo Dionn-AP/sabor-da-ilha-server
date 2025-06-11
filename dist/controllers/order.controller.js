@@ -259,17 +259,31 @@ class OrderController {
         });
         res.json(orders);
     }
-    // GET /orders/history?status=entregue
     static async getOrderHistory(req, res) {
-        const orders = await order_model_1.Order.findAll({
-            where: { status: req.query.status },
-            include: [
-                { model: user_model_1.User, as: "attendant", attributes: ["name"] },
-                { model: user_model_1.User, as: "kitchenUser", attributes: ["name"] },
-            ],
-            order: [["deliveredAt", "DESC"]],
-        });
-        res.json(orders);
+        try {
+            const { status, onlyMine } = req.query;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
+            const where = {
+                status,
+            };
+            if (onlyMine === "true" && userRole === "attendant") {
+                where.attendantId = userId;
+            }
+            const orders = await order_model_1.Order.findAll({
+                where,
+                include: [
+                    { model: user_model_1.User, as: "attendant", attributes: ["name"] },
+                    { model: user_model_1.User, as: "kitchenUser", attributes: ["name"] },
+                ],
+                order: [["deliveredAt", "DESC"]],
+            });
+            res.json(orders);
+        }
+        catch (error) {
+            console.error("Erro ao buscar histórico:", error);
+            res.status(500).json({ error: "Erro ao buscar histórico de pedidos" });
+        }
     }
 }
 exports.default = OrderController;
