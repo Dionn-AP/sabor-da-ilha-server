@@ -341,11 +341,12 @@ export default class OrderController {
       const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
-      const where: any = {
-        status,
-      };
+      const where: any = {};
+      if (status) where.status = status;
 
-      if (onlyMine === "true" && userRole === "attendant") {
+      const isOnlyMine = String(onlyMine) === "true";
+
+      if (isOnlyMine && userRole === "attendant") {
         where.attendantId = userId;
       }
 

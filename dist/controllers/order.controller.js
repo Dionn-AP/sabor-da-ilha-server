@@ -264,10 +264,11 @@ class OrderController {
             const { status, onlyMine } = req.query;
             const userId = req.user?.id;
             const userRole = req.user?.role;
-            const where = {
-                status,
-            };
-            if (onlyMine === "true" && userRole === "attendant") {
+            const where = {};
+            if (status)
+                where.status = status;
+            const isOnlyMine = String(onlyMine) === "true";
+            if (isOnlyMine && userRole === "attendant") {
                 where.attendantId = userId;
             }
             const orders = await order_model_1.Order.findAll({
