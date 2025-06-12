@@ -268,7 +268,7 @@ class OrderController {
             if (status)
                 where.status = status;
             const isOnlyMine = String(onlyMine) === "true";
-            if (isOnlyMine && userRole === "attendant") {
+            if (isOnlyMine && userRole === "atendente") {
                 where.attendantId = userId;
             }
             const orders = await order_model_1.Order.findAll({

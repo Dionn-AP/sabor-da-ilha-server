@@ -346,7 +346,7 @@ export default class OrderController {
 
       const isOnlyMine = String(onlyMine) === "true";
 
-      if (isOnlyMine && userRole === "attendant") {
+      if (isOnlyMine && userRole === "atendente") {
         where.attendantId = userId;
       }
 
