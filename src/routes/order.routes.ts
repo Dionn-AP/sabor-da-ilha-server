@@ -17,7 +17,12 @@ router.post(
 router.get(
   "/orders",
   authenticate,
-  authorize([UserRole.KITCHEN, UserRole.ATTENDANT, UserRole.MANAGER]),
+  authorize([
+    UserRole.KITCHEN,
+    UserRole.ATTENDANT,
+    UserRole.MANAGER,
+    UserRole.MASTER,
+  ]),
   OrderController.listOrders
 );
 
