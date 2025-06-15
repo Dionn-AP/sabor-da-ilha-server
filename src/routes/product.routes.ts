@@ -13,7 +13,6 @@ router.get(
   "/products",
   authenticate,
   authorize([
-    UserRole.ATTENDANT,
     UserRole.MANAGER,
     UserRole.STOCK,
     UserRole.KITCHEN,

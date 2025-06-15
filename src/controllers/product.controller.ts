@@ -7,9 +7,12 @@ import { sequelize } from "../config/database";
 export default class ProductController {
   static async listActiveProducts(req: Request, res: Response) {
     try {
-      const { category } = req.query;
+      const { category, isActive } = req.query;
 
-      const where: any = { isActive: true };
+      const where: any = {};
+      if (isActive !== undefined) {
+        where.isActive = isActive === "true";
+      }
       if (
         category &&
         Object.values(ProductCategory).includes(category as ProductCategory)

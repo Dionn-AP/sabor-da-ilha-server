@@ -7,8 +7,11 @@ const database_1 = require("../config/database");
 class ProductController {
     static async listActiveProducts(req, res) {
         try {
-            const { category } = req.query;
-            const where = { isActive: true };
+            const { category, isActive } = req.query;
+            const where = {};
+            if (isActive !== undefined) {
+                where.isActive = isActive === "true";
+            }
             if (category &&
                 Object.values(product_model_1.ProductCategory).includes(category)) {
                 where.category = category;
