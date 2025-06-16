@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
-const product_model_1 = require("../models/product.model");
 const database_1 = require("../config/database");
 const date_fns_1 = require("date-fns");
 class ReportController {
@@ -27,18 +26,20 @@ class ReportController {
                     startDate = (0, date_fns_1.startOfDay)(now);
                     endDate = (0, date_fns_1.endOfDay)(now);
             }
-            const report = await database_1.sequelize.query(`
-        SELECT 
-          date_trunc(:period, o."createdAt") as period,
-          COUNT(o.id) as "ordersCount",
-          SUM(o.total) as "totalRevenue"
-        FROM orders o
-        WHERE o.status = 'entregue'
-        AND o."createdAt" BETWEEN :startDate AND :endDate
-        GROUP BY period
-        ORDER BY period ASC
-      `, {
-                replacements: { period, startDate, endDate },
+            // Atenção: estamos interpolando a string diretamente porque o PostgreSQL não aceita o date_trunc com bind parameter
+            const query = `
+      SELECT 
+        date_trunc('${period}', o.created_at) AS period,
+        COUNT(o.id) AS "ordersCount",
+        SUM(o.total) AS "totalRevenue"
+      FROM orders o
+      WHERE o.status = 'entregue'
+      AND o.created_at BETWEEN :startDate AND :endDate
+      GROUP BY period
+      ORDER BY period ASC
+    `;
+            const report = await database_1.sequelize.query(query, {
+                replacements: { startDate, endDate },
                 type: sequelize_1.QueryTypes.SELECT,
             });
             const formattedReport = report.map((item) => ({
@@ -54,43 +55,51 @@ class ReportController {
             });
         }
         catch (error) {
-            console.error("Error generating sales report:", error);
-            res.status(500).json({ message: "Erro ao gerar relatório de vendas" });
+            console.error("Erro detalhado:", error);
+            res.status(500).json({ message: "Erro ao gerar relatório", error });
         }
     }
     static async getInventoryReport(req, res) {
         try {
             const { threshold = 10 } = req.query;
             const products = await database_1.sequelize.query(`
-        SELECT 
-          p.id,
-          p.name,
-          p.category,
-          (COALESCE((
+      SELECT 
+        p.id,
+        p.name,
+        p.category,
+        (
+          COALESCE((
             SELECT SUM(quantity) 
             FROM inventory 
             WHERE product_id = p.id 
             AND movement_type = 'entrada'
-          ), 0) - COALESCE((
+          ), 0) 
+          - 
+          COALESCE((
             SELECT SUM(quantity) 
             FROM inventory 
             WHERE product_id = p.id 
             AND movement_type = 'saída'
-          ), 0)) as "currentStock"
-        FROM products p
-        HAVING (COALESCE((
+          ), 0)
+        ) AS "currentStock"
+      FROM products p
+      WHERE (
+        COALESCE((
           SELECT SUM(quantity) 
           FROM inventory 
           WHERE product_id = p.id 
           AND movement_type = 'entrada'
-        ), 0) - COALESCE((
+        ), 0) 
+        - 
+        COALESCE((
           SELECT SUM(quantity) 
           FROM inventory 
           WHERE product_id = p.id 
           AND movement_type = 'saída'
-        ), 0)) <= :threshold
-        ORDER BY "currentStock" ASC
-      `, {
+        ), 0)
+      ) <= :threshold
+      ORDER BY "currentStock" ASC
+    `, {
                 replacements: { threshold },
                 type: sequelize_1.QueryTypes.SELECT,
             });
@@ -100,77 +109,39 @@ class ReportController {
             })));
         }
         catch (error) {
-            console.error("Error generating inventory report:", error);
-            res.status(500).json({ message: "Erro ao gerar relatório de estoque" });
+            console.error("Erro ao gerar relatório de estoque:", error);
+            res.status(500).json({ message: "Erro ao gerar relatório", error });
         }
     }
     static async getFinancialReport(req, res) {
         try {
-            const { year } = req.query;
-            const currentYear = new Date().getFullYear();
-            const reportYear = year ? parseInt(year) : currentYear;
-            const monthlySales = await database_1.sequelize.query(`
-        SELECT 
-          date_trunc('month', o."createdAt") as "month",
-          COUNT(o.id) as "ordersCount",
-          SUM(o.total) as "totalRevenue"
-        FROM orders o
-        WHERE o.status = 'entregue'
-        AND o."createdAt" BETWEEN :startDate AND :endDate
-        GROUP BY "month"
-        ORDER BY "month" ASC
-      `, {
+            const { startDate, endDate } = req.query;
+            const report = await database_1.sequelize.query(`
+      SELECT 
+        date_trunc('month', o.created_at) as "month",
+        COUNT(o.id) as "ordersCount",
+        SUM(o.total) as "totalRevenue"
+      FROM orders o
+      WHERE o.status = 'entregue'
+      AND o.created_at BETWEEN :startDate AND :endDate
+      GROUP BY "month"
+      ORDER BY "month" ASC
+    `, {
                 replacements: {
-                    startDate: new Date(`${reportYear}-01-01`),
-                    endDate: new Date(`${reportYear}-12-31`),
+                    startDate,
+                    endDate,
                 },
                 type: sequelize_1.QueryTypes.SELECT,
             });
-            const topProducts = await database_1.sequelize.query(`
-        SELECT 
-          (jsonb_array_elements(items)->>'productId')::int as "productId",
-          SUM((jsonb_array_elements(items)->>'quantity')::int) as "totalQuantity",
-          SUM((jsonb_array_elements(items)->>'itemTotal')::decimal) as "totalRevenue"
-        FROM orders
-        WHERE status = 'entregue'
-        AND "createdAt" BETWEEN :startDate AND :endDate
-        GROUP BY "productId"
-        ORDER BY "totalRevenue" DESC
-        LIMIT 5
-      `, {
-                replacements: {
-                    startDate: new Date(`${reportYear}-01-01`),
-                    endDate: new Date(`${reportYear}-12-31`),
-                },
-                type: sequelize_1.QueryTypes.SELECT,
-            });
-            const productIds = topProducts.map((item) => item.productId);
-            const products = await product_model_1.Product.findAll({
-                where: { id: productIds },
-                raw: true,
-            });
-            const formattedTopProducts = topProducts.map((item) => {
-                const product = products.find((p) => p.id === item.productId);
-                return {
-                    productId: item.productId,
-                    productName: product?.name || "Desconhecido",
-                    totalQuantity: Number(item.totalQuantity),
-                    totalRevenue: Number(item.totalRevenue || 0),
-                };
-            });
-            res.json({
-                year: reportYear,
-                monthlySales: monthlySales.map((item) => ({
-                    month: item.month,
-                    ordersCount: Number(item.ordersCount),
-                    totalRevenue: Number(item.totalRevenue || 0),
-                })),
-                topProducts: formattedTopProducts,
-            });
+            res.json(report.map((r) => ({
+                ...r,
+                ordersCount: Number(r.ordersCount),
+                totalRevenue: Number(r.totalRevenue),
+            })));
         }
         catch (error) {
-            console.error("Error generating financial report:", error);
-            res.status(500).json({ message: "Erro ao gerar relatório financeiro" });
+            console.error("Erro ao gerar relatório financeiro:", error);
+            res.status(500).json({ message: "Erro ao gerar relatório", error });
         }
     }
 }
