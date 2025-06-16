@@ -38,11 +38,15 @@ router.get(
   OrderController.getOrderHistory
 );
 
-// Rotas para cozinha
 router.patch(
   "/:id/status",
   authenticate,
-  authorize([UserRole.KITCHEN, UserRole.MANAGER, UserRole.MASTER]),
+  authorize([
+    UserRole.ATTENDANT,
+    UserRole.KITCHEN,
+    UserRole.MANAGER,
+    UserRole.MASTER,
+  ]),
   OrderController.updateOrderStatus
 );
 

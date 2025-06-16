@@ -42,12 +42,7 @@ router.put(
 router.patch(
   "/:id/status",
   authenticate,
-  authorize([
-    UserRole.ATTENDANT,
-    UserRole.MANAGER,
-    UserRole.MASTER,
-    UserRole.STOCK,
-  ]),
+  authorize([UserRole.MANAGER, UserRole.MASTER, UserRole.STOCK]),
   ProductController.toggleProductStatus
 );
 
