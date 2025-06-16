@@ -22,5 +22,10 @@ router.get("/products", auth_middleware_1.authenticate, (0, role_middleware_1.au
 // Rotas autenticadas
 router.post("/", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER, user_model_1.UserRole.STOCK]), (0, validate_middleware_1.validate)(product_validation_1.productSchema), product_controller_1.default.createProduct);
 router.put("/:id", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER, user_model_1.UserRole.STOCK]), (0, validate_middleware_1.validate)(product_validation_1.productSchema), product_controller_1.default.updateProduct);
-router.patch("/:id/status", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([user_model_1.UserRole.MANAGER, user_model_1.UserRole.MASTER, user_model_1.UserRole.STOCK]), product_controller_1.default.toggleProductStatus);
+router.patch("/:id/status", auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([
+    user_model_1.UserRole.ATTENDANT,
+    user_model_1.UserRole.MANAGER,
+    user_model_1.UserRole.MASTER,
+    user_model_1.UserRole.STOCK,
+]), product_controller_1.default.toggleProductStatus);
 exports.default = router;
