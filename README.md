@@ -85,3 +85,7 @@ Se você deseja contribuir com o projeto, siga os seguintes passos:
 MIT
 
 ---
+
+### Autor
+
+* **Dionn-AP** - [Perfil do GitHub](https://github.com/Dionn-AP)
